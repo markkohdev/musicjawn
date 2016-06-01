@@ -1,5 +1,11 @@
 import argparse
 from PIL import Image
+import pygame
+import pygame.mixer
+from time import sleep
+from StringIO import StringIO
+
+from midiutil.MidiFile import MIDIFile
 
 # Our Constant jawns
 # PIXEL_BEATVAL = 1.0/8.0
@@ -9,12 +15,12 @@ PIXEL_REPEAT_THRESHOLD = 2
 parser = argparse.ArgumentParser(description='Take an image and produce a music from it!')
 parser.add_argument('image', help='The input image!')
 
-parser.add_argument('output_file', help='The output audio file (.wav)')
+parser.add_argument('output', help='The output audio file (.wav)')
 
 args = parser.parse_args()
 
 
-print "Input: {}, Output: {}".format(args.image, args.output_file)
+print "Input: {}, Output: {}".format(args.image, args.output)
 
 # Open the image file and read the RGB pixel values into an array
 im = Image.open(args.image, 'r')
@@ -48,3 +54,52 @@ def mark():
 def ethan():
     # Ethan do your shit here
     print "I am Ethan"
+
+
+
+# Create the MIDIFile Object
+memFile = StringIO()
+MyMIDI = MIDIFile(1)
+# Add track name and tempo. The first argument to addTrackName and
+# addTempo is the time to write the event.
+track = 0
+time = 0
+MyMIDI.addTrackName(track,time,"Sample Track")
+MyMIDI.addTempo(track,time, 120)
+
+# Add a note. addNote expects the following information:
+channel = 0
+base = 60
+duration = 3
+volume = 100
+
+
+# Now add the note.
+# for pitch in range(0,3):
+MyMIDI.addNote(track,channel,60,0,duration,volume)
+MyMIDI.addNote(track,channel,64,0,duration,volume)
+MyMIDI.addNote(track,channel,67,0,duration,volume)
+
+
+MyMIDI.addNote(track,channel,60,3,duration,volume)
+MyMIDI.addNote(track,channel,65,3,duration,volume)
+MyMIDI.addNote(track,channel,69,3,duration,volume)
+
+
+# And write it to disk (so we can save it if we wanna)
+binfile = open(args.output, 'wb')
+MyMIDI.writeFile(binfile)
+binfile.close()
+
+# Also write it to memory
+MyMIDI.writeFile(memFile)
+
+
+# Use pygame to play the midi that we stored in memory (in memFile)
+pygame.init()
+pygame.mixer.init()
+memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
+pygame.mixer.music.load(memFile)
+pygame.mixer.music.play()
+while pygame.mixer.music.get_busy():
+    sleep(1)
