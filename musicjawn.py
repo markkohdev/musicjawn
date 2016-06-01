@@ -160,8 +160,77 @@ def mark():
 
 
 def ethan():
-    # Ethan do your shit here
-    print "I am Ethan"
+    ############################################################################
+    # Setup Constants
+    ############################################################################
+    RED_CHANNEL = 0
+    BLUE_CHANNEL = 1
+    GREEN_CHANNEL = 2
+
+    CHANNELS = [RED_CHANNEL,GREEN_CHANNEL,BLUE_CHANNEL]
+
+    MIDI_MIN = 42
+    MIDI_MAX = 78
+    RANGE = MIDI_MAX - MIDI_MIN
+
+    MAX_DURATION = 4
+
+    ############################################################################
+    # Image data setup
+    ############################################################################
+    # Open the image file and read the RGB pixel values into an array
+    im = Image.open(args.input, 'r')
+    width, height = im.size
+    pixel_values = list(im.getdata())
+    pixel_values = pixel_values[:1000]
+
+
+    ############################################################################
+    # Setup MIDI Jawns
+    ############################################################################
+    # Create the MIDIFile Object
+    MyMIDI = MIDIFile(1)
+    # Add track name and tempo
+    track = 0
+    time = 0.0
+    MyMIDI.addTrackName(track,time,"Ethan is Better than Mark") #Disclaimer: This is entirely Ethan's opinion
+    MyMIDI.addTempo(track,time, 480)
+
+
+    ############################################################################
+    # Calculate the things!
+    ############################################################################
+    # Initialize our time values
+    time_values = [0,0,0]
+    volume = 100
+
+    # Calculate the running sums for R/G/B
+    for pixel in pixel_values:
+        for channel in CHANNELS:
+            pitch = (pixel[channel] % RANGE) + MIDI_MIN
+            duration = pixel[(channel + 1) % 3] % MAX_DURATION
+
+            #Add Note
+            print "C: {}, P: {}, T: {}, D: {}, V: {}".format(channel,pitch,time_values[channel],duration,volume)
+
+            MyMIDI.addNote(track,channel,pitch,time_values[channel],duration,volume)
+
+            #Increment Time
+            time_values[channel] = time_values[channel] + duration
+
+    # Also write it to memory
+    memFile = StringIO()
+    MyMIDI.writeFile(memFile)
+
+    # Use pygame to play the midi that we stored in memory (in memFile)
+    pygame.init()
+    pygame.mixer.init()
+    memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
+    pygame.mixer.music.load(memFile)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        sleep(1)
 
 
 mark()
+#ethan()
