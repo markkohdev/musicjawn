@@ -123,7 +123,8 @@ def mark():
             prev_pitch = pitch
             prev_val = value
 
-            duration = math.log(count, random.randint(2,10))
+            # duration = math.log(count, random.randint(2,10))
+            duration = count
             time = time + 1
 
             # If we didn't randomize to a rest, add the note
@@ -136,6 +137,8 @@ def mark():
                     time,
                     duration,
                     volume)
+            else:
+                print "Resting - {}".format(channel)
 
 
     # print values
