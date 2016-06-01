@@ -22,27 +22,29 @@ width, height = im.size
 pixel_values = list(im.getdata())
 
 
-# import ipdb; ipdb.set_trace()
+def mark():
+    prevs = [0,0,0] # Previous R,G, and B values
+    prev_lengths = [0,0,0] # Number of previous jawns at those values
+    values = [[],[],[]] # When a new value is found, the old value and the count get added here
+
+    for pixel in pixel_values:
+        for v in range(0,3):
+            if prevs[v] == pixel[v]:
+                # If this pixel value for the color is equal to
+                # the last color, increment the count
+                prev_lengths[v] += 1
+            else:
+                # Otherwise, store the conut and reset the value
+                store = (prevs[v],prev_lengths[v])
+                values[v].append(store)
+                prevs[v] = pixel[v]
+                prev_lengths[v] = 0
 
 
-prevs = [0,0,0]
-prev_lengths = [0,0,0]
-values = [[],[],[]]
-
-for pixel in pixel_values:
-    for v in range(0,3):
-        if prevs[v] == pixel[v]:
-            # If this pixel value for the color is equal to
-            # the last color, increment the count
-            prev_lengths[v] += 1
-        else:
-            # Otherwise, store the conut and reset the value
-            store = (prevs[v],prev_lengths[v])
-            values[v].append(store)
-            prevs[v] = pixel[v]
-            prev_lengths[v] = 0
+    # print values
+    import ipdb; ipdb.set_trace()
 
 
-# print values
-import ipdb; ipdb.set_trace()
-
+def ethan():
+    # Ethan do your shit here
+    print "I am Ethan"
