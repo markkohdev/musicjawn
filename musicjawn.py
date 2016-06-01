@@ -4,8 +4,11 @@ import pygame
 import pygame.mixer
 from time import sleep
 from StringIO import StringIO
+import math
 
 from midiutil.MidiFile import MIDIFile
+
+import january
 
 # Our Constant jawns
 # PIXEL_BEATVAL = 1.0/8.0
@@ -22,33 +25,128 @@ args = parser.parse_args()
 
 print "Input: {}, Output: {}".format(args.image, args.output)
 
-# Open the image file and read the RGB pixel values into an array
-im = Image.open(args.image, 'r')
-width, height = im.size
-pixel_values = list(im.getdata())
-
-
 def mark():
+
+    ############################################################################
+    # Setup Constants
+    ############################################################################
+    RED_CHANNEL = 0
+    BLUE_CHANNEL = 1
+    GREEN_CHANNEL = 2
+
+    CHANNELS = [RED_CHANNEL,GREEN_CHANNEL,BLUE_CHANNEL]
+    # CHANNELS = [RED_CHANNEL]
+
+    MIDI_MIN = 24
+    MIDI_MAX = 96
+
+
+    ############################################################################
+    # Image data setup
+    ############################################################################
+    # Open the image file and read the RGB pixel values into an array
+    im = Image.open(args.image, 'r')
+    width, height = im.size
+    pixel_values = list(im.getdata())
+    pixel_values = pixel_values[:10000]
+
+
+    ############################################################################
+    # Setup MIDI Jawns
+    ############################################################################
+    # Create the MIDIFile Object
+    MyMIDI = MIDIFile(1)
+    # Add track name and tempo
+    track = 0
+    time = 0.0
+    MyMIDI.addTrackName(track,time,"Music Jawns")
+    MyMIDI.addTempo(track,time, 120)
+
+
+    ############################################################################
+    # Calculate the things!
+    ############################################################################
+    # Initialize our running RGB data values
     prevs = [0,0,0] # Previous R,G, and B values
     prev_lengths = [0,0,0] # Number of previous jawns at those values
     values = [[],[],[]] # When a new value is found, the old value and the count get added here
 
+    # Calculate the running sums for R/G/B
     for pixel in pixel_values:
-        for v in range(0,3):
-            if prevs[v] == pixel[v]:
+        for channel in CHANNELS:
+            if prevs[channel] == pixel[channel]:
                 # If this pixel value for the color is equal to
                 # the last color, increment the count
-                prev_lengths[v] += 1
+                prev_lengths[channel] += 1
             else:
                 # Otherwise, store the conut and reset the value
-                store = (prevs[v],prev_lengths[v])
-                values[v].append(store)
-                prevs[v] = pixel[v]
-                prev_lengths[v] = 0
+                store = (prevs[channel],prev_lengths[channel])
+                values[channel].append(store)
+                prevs[channel] = pixel[channel]
+                prev_lengths[channel] = 0
+
+
+    # Remove timeless jawns
+    for channel in CHANNELS:
+        values[channel] = filter(lambda (value,count): count > 0, values[channel])
+
+
+    # Add a note. addNote expects the following information:
+    channel = RED_CHANNEL
+    start_pitch = 60
+    volume = 100
+
+    for channel in CHANNELS:
+        time = 0.0
+
+        #  Get an iterator and skip the first val
+        iterator = iter(values[channel])
+
+        # We change these on each loop
+        prev_val = next(iterator)[0]
+        prev_pitch = start_pitch
+
+        for (value,count) in values[channel]:
+            # Find the current pitch
+            diff = value - prev_val
+            pitch = prev_pitch + diff
+
+            if pitch < MIDI_MIN or pitch > MIDI_MAX:
+                pitch = 60
+
+            # Update the previous vars
+            prev_pitch = pitch
+            prev_val = value
+
+            duration = count
+            time = time + math.log(duration)
+
+            print "P: {}, T: {}, D: {}, V: {}".format(pitch,time,duration,volume)
+
+            MyMIDI.addNote(track,
+                channel,
+                pitch,
+                time,
+                duration,
+                volume)
 
 
     # print values
-    import ipdb; ipdb.set_trace()
+    # import ipdb; ipdb.set_trace()
+
+    # Also write it to memory
+    memFile = StringIO()
+    MyMIDI.writeFile(memFile)
+
+    # Use pygame to play the midi that we stored in memory (in memFile)
+    pygame.init()
+    pygame.mixer.init()
+    memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
+    pygame.mixer.music.load(memFile)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        sleep(1)
+
 
 
 def ethan():
@@ -56,50 +154,23 @@ def ethan():
     print "I am Ethan"
 
 
+mark()
 
-# Create the MIDIFile Object
-memFile = StringIO()
-MyMIDI = MIDIFile(1)
-# Add track name and tempo. The first argument to addTrackName and
-# addTempo is the time to write the event.
-track = 0
-time = 0
-MyMIDI.addTrackName(track,time,"Sample Track")
-MyMIDI.addTempo(track,time, 120)
+# # And write it to disk (so we can save it if we wanna)
+# binfile = open(args.output, 'wb')
+# MyMIDI.writeFile(binfile)
+# binfile.close()
 
-# Add a note. addNote expects the following information:
-channel = 0
-base = 60
-duration = 3
-volume = 100
+# # Also write it to memory
+# memFile = StringIO()
+# MyMIDI.writeFile(memFile)
 
 
-# Now add the note.
-# for pitch in range(0,3):
-MyMIDI.addNote(track,channel,60,0,duration,volume)
-MyMIDI.addNote(track,channel,64,0,duration,volume)
-MyMIDI.addNote(track,channel,67,0,duration,volume)
-
-
-MyMIDI.addNote(track,channel,60,3,duration,volume)
-MyMIDI.addNote(track,channel,65,3,duration,volume)
-MyMIDI.addNote(track,channel,69,3,duration,volume)
-
-
-# And write it to disk (so we can save it if we wanna)
-binfile = open(args.output, 'wb')
-MyMIDI.writeFile(binfile)
-binfile.close()
-
-# Also write it to memory
-MyMIDI.writeFile(memFile)
-
-
-# Use pygame to play the midi that we stored in memory (in memFile)
-pygame.init()
-pygame.mixer.init()
-memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
-pygame.mixer.music.load(memFile)
-pygame.mixer.music.play()
-while pygame.mixer.music.get_busy():
-    sleep(1)
+# # Use pygame to play the midi that we stored in memory (in memFile)
+# pygame.init()
+# pygame.mixer.init()
+# memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
+# pygame.mixer.music.load(memFile)
+# pygame.mixer.music.play()
+# while pygame.mixer.music.get_busy():
+#     sleep(1)
