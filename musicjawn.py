@@ -123,8 +123,8 @@ def mark():
             prev_pitch = pitch
             prev_val = value
 
-            duration = count
-            time = time + math.log(duration, random.randint(2,10))
+            duration = math.log(count, random.randint(2,10))
+            time = time + 1
 
             # If we didn't randomize to a rest, add the note
             if random.random() > REST_CHANCE:
