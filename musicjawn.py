@@ -169,8 +169,8 @@ def ethan():
 
     CHANNELS = [RED_CHANNEL,GREEN_CHANNEL,BLUE_CHANNEL]
 
-    MIDI_MIN = 42
-    MIDI_MAX = 78
+    MIDI_MIN = 60
+    MIDI_MAX = 96
     RANGE = MIDI_MAX - MIDI_MIN
 
     MAX_DURATION = 4
@@ -194,7 +194,7 @@ def ethan():
     track = 0
     time = 0.0
     MyMIDI.addTrackName(track,time,"Ethan is Better than Mark") #Disclaimer: This is entirely Ethan's opinion
-    MyMIDI.addTempo(track,time, 480)
+    MyMIDI.addTempo(track,time, 360)
 
 
     ############################################################################
