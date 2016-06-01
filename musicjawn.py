@@ -4,11 +4,13 @@ import pygame
 import pygame.mixer
 from time import sleep
 from StringIO import StringIO
-import math
+import math, random
 
 from midiutil.MidiFile import MIDIFile
 
 import january
+
+random.seed()
 
 # Our Constant jawns
 # PIXEL_BEATVAL = 1.0/8.0
@@ -16,14 +18,14 @@ PIXEL_REPEAT_THRESHOLD = 2
 
 # We gotta parse this ish
 parser = argparse.ArgumentParser(description='Take an image and produce a music from it!')
-parser.add_argument('image', help='The input image!')
+parser.add_argument('input', help='The input image!')
 
-parser.add_argument('output', help='The output audio file (.wav)')
+parser.add_argument('--output', help='The output audio file (.midi)')
 
 args = parser.parse_args()
 
 
-print "Input: {}, Output: {}".format(args.image, args.output)
+print "Input: {}, Output: {}".format(args.input, args.output)
 
 def mark():
 
@@ -39,16 +41,18 @@ def mark():
 
     MIDI_MIN = 24
     MIDI_MAX = 96
+    RANGE = MIDI_MAX - MIDI_MIN
 
+    REST_CHANCE = 0.1
 
     ############################################################################
     # Image data setup
     ############################################################################
     # Open the image file and read the RGB pixel values into an array
-    im = Image.open(args.image, 'r')
+    im = Image.open(args.input, 'r')
     width, height = im.size
     pixel_values = list(im.getdata())
-    pixel_values = pixel_values[:10000]
+    pixel_values = pixel_values[:1000]
 
 
     ############################################################################
@@ -74,7 +78,8 @@ def mark():
     # Calculate the running sums for R/G/B
     for pixel in pixel_values:
         for channel in CHANNELS:
-            if prevs[channel] == pixel[channel]:
+            dis_pixel = pixel[channel] % RANGE
+            if prevs[channel] == dis_pixel:
                 # If this pixel value for the color is equal to
                 # the last color, increment the count
                 prev_lengths[channel] += 1
@@ -82,7 +87,7 @@ def mark():
                 # Otherwise, store the conut and reset the value
                 store = (prevs[channel],prev_lengths[channel])
                 values[channel].append(store)
-                prevs[channel] = pixel[channel]
+                prevs[channel] = dis_pixel
                 prev_lengths[channel] = 0
 
 
@@ -119,16 +124,18 @@ def mark():
             prev_val = value
 
             duration = count
-            time = time + math.log(duration)
+            time = time + math.log(duration, random.randint(2,10))
 
-            print "P: {}, T: {}, D: {}, V: {}".format(pitch,time,duration,volume)
+            # If we didn't randomize to a rest, add the note
+            if random.random() > REST_CHANCE:
+                print "P: {}, T: {}, D: {}, V: {}".format(pitch,time,duration,volume)
 
-            MyMIDI.addNote(track,
-                channel,
-                pitch,
-                time,
-                duration,
-                volume)
+                MyMIDI.addNote(track,
+                    channel,
+                    pitch,
+                    time,
+                    duration,
+                    volume)
 
 
     # print values
@@ -155,22 +162,3 @@ def ethan():
 
 
 mark()
-
-# # And write it to disk (so we can save it if we wanna)
-# binfile = open(args.output, 'wb')
-# MyMIDI.writeFile(binfile)
-# binfile.close()
-
-# # Also write it to memory
-# memFile = StringIO()
-# MyMIDI.writeFile(memFile)
-
-
-# # Use pygame to play the midi that we stored in memory (in memFile)
-# pygame.init()
-# pygame.mixer.init()
-# memFile.seek(0)  # THIS IS CRITICAL, OTHERWISE YOU GET THAT ERROR!
-# pygame.mixer.music.load(memFile)
-# pygame.mixer.music.play()
-# while pygame.mixer.music.get_busy():
-#     sleep(1)
