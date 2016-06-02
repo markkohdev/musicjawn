@@ -22,10 +22,18 @@ parser.add_argument('input', help='The input image!')
 
 parser.add_argument('--output', help='The output audio file (.midi)')
 
+parser.add_argument('--channels', help='The channels to include')
+
 args = parser.parse_args()
 
 
 print "Input: {}, Output: {}".format(args.input, args.output)
+
+def major_chord(root):
+    return [root, root+4, root+7]
+
+def minor_chord(root):
+    return [root, root+3, root+7]
 
 def mark():
 
@@ -33,11 +41,17 @@ def mark():
     # Setup Constants
     ############################################################################
     RED_CHANNEL = 0
-    BLUE_CHANNEL = 1
-    GREEN_CHANNEL = 2
+    GREEN_CHANNEL = 1
+    BLUE_CHANNEL = 2
 
-    CHANNELS = [RED_CHANNEL,GREEN_CHANNEL,BLUE_CHANNEL]
-    # CHANNELS = [RED_CHANNEL]
+    if args.channels is None:
+        CHANNELS = [RED_CHANNEL,GREEN_CHANNEL,BLUE_CHANNEL]
+    else:
+        CHANNEL_CODES = {'r': RED_CHANNEL, 'g': GREEN_CHANNEL, 'b': BLUE_CHANNEL}
+        CHANNELS = [CHANNEL_CODES[code] for code in args.channels]
+    # # CHANNELS = [RED_CHANNEL]
+    # CHANNELS = [BLUE_CHANNEL]
+    # # CHANNELS = [GREEN_CHANNEL]
 
     MIDI_MIN = 24
     MIDI_MAX = 96
@@ -63,8 +77,17 @@ def mark():
     # Add track name and tempo
     track = 0
     time = 0.0
+    MyMIDI.addTempo(track,time, 113)
     MyMIDI.addTrackName(track,time,"Music Jawns")
-    MyMIDI.addTempo(track,time, 120)
+
+    # Chromatic Procussion
+    MyMIDI.addProgramChange(track,RED_CHANNEL,time, 10)
+
+    # Brass
+    MyMIDI.addProgramChange(track,GREEN_CHANNEL,time, 60)
+
+    # Brass
+    # MyMIDI.addProgramChange(track,GREEN_CHANNEL,time, 110)
 
 
     ############################################################################
@@ -131,12 +154,20 @@ def mark():
             if random.random() > REST_CHANCE:
                 print "P: {}, T: {}, D: {}, V: {}".format(pitch,time,duration,volume)
 
-                MyMIDI.addNote(track,
-                    channel,
-                    pitch,
-                    time,
-                    duration,
-                    volume)
+                if diff > 5:
+                    pitch_set = major_chord(pitch)
+                elif diff > 2:
+                    pitch_set = minor_chord(pitch)
+                else:
+                    pitch_set = [pitch]
+
+                for pitch in pitch_set:
+                    MyMIDI.addNote(track,
+                        channel,
+                        pitch,
+                        time,
+                        duration,
+                        volume)
             else:
                 print "Resting - {}".format(channel)
 
@@ -233,4 +264,4 @@ def ethan():
 
 
 mark()
-#ethan()
+# ethan()
