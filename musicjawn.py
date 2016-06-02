@@ -22,7 +22,9 @@ parser.add_argument('input', help='The input image!')
 
 parser.add_argument('--output', help='The output audio file (.midi)')
 
-parser.add_argument('--channels', help='The channels to include')
+parser.add_argument('--channels', help='The channels to include (r - Red, g - Green, b - Blue)')
+
+parser.add_argument('--algo', help='Who\'s algorithm to use (m - Mark, e- Ethan)')
 
 args = parser.parse_args()
 
@@ -53,8 +55,9 @@ def mark():
     # CHANNELS = [BLUE_CHANNEL]
     # # CHANNELS = [GREEN_CHANNEL]
 
+    ROOT_NOTE = 60
     MIDI_MIN = 24
-    MIDI_MAX = 96
+    MIDI_MAX = 108
     RANGE = MIDI_MAX - MIDI_MIN
 
     REST_CHANCE = 0.1
@@ -80,14 +83,14 @@ def mark():
     MyMIDI.addTempo(track,time, 113)
     MyMIDI.addTrackName(track,time,"Music Jawns")
 
-    # Chromatic Procussion
+    # RED: Chromatic Procussion
     MyMIDI.addProgramChange(track,RED_CHANNEL,time, 10)
 
-    # Brass
+    # GREEN: Brass
     MyMIDI.addProgramChange(track,GREEN_CHANNEL,time, 60)
 
-    # Brass
-    # MyMIDI.addProgramChange(track,GREEN_CHANNEL,time, 110)
+    # BLUE: Brass
+    MyMIDI.addProgramChange(track,BLUE_CHANNEL,time, 1)
 
 
     ############################################################################
@@ -121,7 +124,7 @@ def mark():
 
     # Add a note. addNote expects the following information:
     channel = RED_CHANNEL
-    start_pitch = 60
+    start_pitch = ROOT_NOTE
     volume = 100
 
     for channel in CHANNELS:
@@ -140,7 +143,7 @@ def mark():
             pitch = prev_pitch + diff
 
             if pitch < MIDI_MIN or pitch > MIDI_MAX:
-                pitch = 60
+                pitch = random.randint(MIDI_MIN,MIDI_MAX)
 
             # Update the previous vars
             prev_pitch = pitch
@@ -154,6 +157,8 @@ def mark():
             if random.random() > REST_CHANCE:
                 print "P: {}, T: {}, D: {}, V: {}".format(pitch,time,duration,volume)
 
+                # Depending how big the value jump was, use a major chord, minor
+                # chord, or single note
                 if diff > 5:
                     pitch_set = major_chord(pitch)
                 elif diff > 2:
@@ -263,5 +268,10 @@ def ethan():
         sleep(1)
 
 
-mark()
-# ethan()
+if args.algo is None:
+    mark()
+    ethan()
+elif args.algo.lower() == 'm':
+    mark()
+elif args.algo.lower() == 'e':
+    ethan()
