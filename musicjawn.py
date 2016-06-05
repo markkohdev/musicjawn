@@ -116,10 +116,13 @@ def mark():
                 prevs[channel] = dis_pixel
                 prev_lengths[channel] = 0
 
-
     # Remove timeless jawns
     for channel in CHANNELS:
         values[channel] = filter(lambda (value,count): count > 0, values[channel])
+
+
+    values_short = [l[:10] for l in values]
+    print values_short
 
 
     # Add a note. addNote expects the following information:

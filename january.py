@@ -66,7 +66,6 @@ KEY_CUTOFF = 48
 class Intervals:
 
     # A list of shorthand lookups so Rich could write things out naturally?
-    
 
     # Whether the Intervals.loadout object is up to date or not.
     updated = False
